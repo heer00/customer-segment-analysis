@@ -15,7 +15,7 @@ Determine optimal number of clusters using Elbow Method
 Visualize customer segments
 Generate business insights from clusters
 
-# 🛠️ Tech Stack
+#  Tech Stack
 Python
 Pandas
 NumPy
