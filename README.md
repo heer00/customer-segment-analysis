@@ -22,3 +22,6 @@ NumPy
 Matplotlib / Seaborn
 Scikit-learn
 Joblib
+
+# Used dataset from kaggle:
+Link: https://www.kaggle.com/datasets/vjchoudhary7/customer-segmentation-tutorial-in-python?select=Mall_Customers.csv
