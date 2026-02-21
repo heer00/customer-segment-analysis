@@ -7,13 +7,31 @@ To determine the optimal number of clusters, the Elbow Method is used, which hel
 
 This project demonstrates how unsupervised machine learning techniques can be used in real-world business scenarios to improve customer targeting, personalize marketing strategies, and enhance overall customer experience.
 
-# objectives
+# Objectives
 Analyze customer purchasing behavior
 Perform data cleaning and preprocessing
 Apply K-Means clustering algorithm
 Determine optimal number of clusters using Elbow Method
 Visualize customer segments
 Generate business insights from clusters
+
+# Workflows
+1. Data Loading using Pandas  
+2. Data Inspection and Cleaning  
+3. Feature Selection  
+4. Elbow Method to determine optimal clusters  
+5. K-Means Clustering  
+6. Cluster Visualization  
+7. Business Insight Generation
+
+# Results
+- Optimal number of clusters determined using Elbow Method: **5**
+- Customers segmented into:
+  - High Income – High Spending (Target Customers)
+  - High Income – Low Spending
+  - Medium Income – Medium Spending
+  - Low Income – High Spending
+  - Low Income – Low Spending
 
 #  Tech Stack
 Python
