@@ -24,6 +24,9 @@ Generate business insights from clusters
 6. Cluster Visualization  
 7. Business Insight Generation
 
+# Feature Scaling
+Since K-Means relies on distance calculations (Euclidean distance), feature scaling was applied using **StandardScaler** to ensure that both income and spending score contribute equally to clustering.
+Without scaling, features with larger numeric ranges could dominate the clustering process.
 # Results
 - Optimal number of clusters determined using Elbow Method: **5**
 - Customers segmented into:
@@ -32,6 +35,12 @@ Generate business insights from clusters
   - Medium Income – Medium Spending
   - Low Income – High Spending
   - Low Income – Low Spending
+# Streamlit Web Application
+A simple interactive web app was built using Streamlit.
+Users can:
+- Enter customer income and spending behavior
+- Predict the customer segment
+- Understand business classification
 
 #  Tech Stack
 Python
@@ -43,3 +52,7 @@ Joblib
 
 # Used dataset from kaggle:
 Link: https://www.kaggle.com/datasets/vjchoudhary7/customer-segmentation-tutorial-in-python?select=Mall_Customers.csv
+
+## To run it locally:
+```bash
+python -m streamlit run app.py
