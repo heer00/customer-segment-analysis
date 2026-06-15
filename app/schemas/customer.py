@@ -18,53 +18,76 @@ from pydantic import BaseModel, Field, field_validator
 
 # ─── Shared Base Input Fields ────────────────────────────────────────────────
 class CustomerBase(BaseModel):
+    age: int = Field(
+        ...,
+        ge=18,
+        le=80,
+        description="Customer age in years (18–80).",
+        examples=[28],
+    )
+    gender: str = Field(
+        ...,
+        description="Customer gender: 'Male' or 'Female'.",
+        examples=["Male"],
+    )
     annual_income: float = Field(
         ...,
         ge=0,
         le=200,
-        description="Annual income in k$ (thousands of dollars). Range: 0–200.",
-        examples=[75],
+        description="Annual income in Lakhs of Indian Rupees (₹). Range: 0–200 Lakhs.",
+        examples=[75.0],
     )
     spending_score: float = Field(
         ...,
         ge=1,
         le=100,
-        description="Spending score assigned by the mall (1–100).",
-        examples=[80],
+        description=(
+            "Spending score (1–100) assigned based on purchase frequency, "
+            "transaction value, and mall loyalty. "
+            "1 = lowest engagement, 100 = highest engagement."
+        ),
+        examples=[82.0],
+    )
+    purchase_frequency: int = Field(
+        ...,
+        ge=1,
+        le=52,
+        description="Estimated number of shopping visits per year (1–52).",
+        examples=[12],
     )
 
-    @field_validator("spending_score")
+    @field_validator("gender")
     @classmethod
-    def spending_score_must_be_positive(cls, v: float) -> float:
-        if v <= 0:
-            raise ValueError("Spending score must be greater than 0")
-        return v
+    def gender_must_be_valid(cls, v: str) -> str:
+        if v.strip().title() not in ("Male", "Female"):
+            raise ValueError("Gender must be 'Male' or 'Female'")
+        return v.strip().title()
 
 
-# ─── Legacy Request Schema (Preserving compatibility) ───────────────────────
+# ─── Prediction-only Input (no name/email needed) ────────────────────────────
 class CustomerInput(CustomerBase):
-    """What the legacy prediction client sends in the POST body."""
+    """What the prediction client sends in the POST body."""
     pass
 
 
 # ─── Customer CRUD Schemas ────────────────────────────────────────────────────
 class CustomerCreate(CustomerBase):
-    """Schema for creating a customer."""
+    """Schema for creating a full customer profile."""
     name: str = Field(
         ...,
         min_length=1,
         description="Full name of the customer.",
-        examples=["Jane Doe"],
+        examples=["Rajesh Kumar"],
     )
     email: str = Field(
         ...,
         description="Unique email address of the customer.",
-        examples=["jane.doe@example.com"],
+        examples=["rajesh.kumar@example.com"],
     )
 
     @field_validator("email")
     @classmethod
-    def email_must_contain_at(cls, v: str) -> str:
+    def email_must_be_valid(cls, v: str) -> str:
         if "@" not in v:
             raise ValueError("Invalid email address")
         return v.lower().strip()
@@ -76,20 +99,24 @@ class CustomerResponse(CustomerCreate):
     created_at: datetime = Field(description="Timestamp when customer was created.")
 
     model_config = {
-        "from_attributes": True  # Pydantic v2 configuration to read ORM objects
+        "from_attributes": True
     }
 
 
-# ─── Prediction History Schemas ───────────────────────────────────────────────
+# ─── Prediction History Schema ────────────────────────────────────────────────
 class PredictionRecordResponse(BaseModel):
-    """Schema representing a stored prediction record in history."""
+    """Schema representing a stored prediction record."""
     id: int
     customer_id: Optional[int] = None
+    age: int
+    gender: str
     annual_income: float
     spending_score: float
+    purchase_frequency: int
     cluster_id: int
     segment_label: str
     segment_description: str
+    recommendation: str
     predicted_at: datetime
 
     model_config = {
@@ -97,29 +124,19 @@ class PredictionRecordResponse(BaseModel):
     }
 
 
-# ─── Legacy Prediction Response Schema (Preserving /predict endpoint contract)
+# ─── Prediction Response Schema ───────────────────────────────────────────────
 class PredictionResponse(BaseModel):
-    """
-    What the API sends back.
-    Clients can rely on this exact shape — it's our API contract.
-    """
+    """What the API sends back after a prediction."""
     cluster_id: int = Field(description="Numeric cluster ID from KMeans (0–4)")
     segment_label: str = Field(description="Business-friendly segment name")
     segment_description: str = Field(description="Human-readable segment explanation")
+    recommendation: str = Field(description="Recommended business action for this segment")
     input_received: dict = Field(description="Echo of the input for traceability")
+    preprocessing_warnings: list[str] = Field(
+        default=[],
+        description="Fields that were missing and filled with defaults"
+    )
     prediction_id: Optional[int] = Field(None, description="Database record ID if persisted")
-
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "cluster_id": 0,
-                "segment_label": "Premium Customers",
-                "segment_description": "High Income, High Spending — your most valuable customers",
-                "input_received": {"annual_income": 75, "spending_score": 80},
-                "prediction_id": 42
-            }
-        }
-    }
 
 
 # ─── Health Check Schema ──────────────────────────────────────────────────────

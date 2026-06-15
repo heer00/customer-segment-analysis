@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     model_path: str = "model/kmeans_model.pkl"
     scaler_path: str = "model/scaler.pkl"
+    label_encoder_path: str = "model/label_encoder.pkl"
+    cluster_labels_path: str = "model/cluster_labels.json"
 
     openai_api_key: str = ""
 

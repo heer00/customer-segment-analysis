@@ -20,8 +20,9 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.model import get_model
+from app.core.preprocessor import get_preprocessor
 from app.schemas.customer import HealthResponse
-from app.api.routes import predict, customers
+from app.api.routes import predict, customers, analytics
 from app.db import Base, engine
 
 
@@ -42,8 +43,9 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     print("[DB] Database tables initialized successfully.")
 
-    # Pre-load the ML model so first request isn't slow
+    # Pre-load the ML model and preprocessor so first request isn't slow
     get_model()
+    get_preprocessor()
     print("[READY] Server started. Visit http://127.0.0.1:8000/docs\n")
 
     yield  # <- Server runs while suspended here
@@ -63,19 +65,20 @@ Predict customer segments using KMeans clustering and get
 business-friendly labels for actionable insights.
 
 ### Features
-- ML-powered customer segmentation
-- 5 distinct business-friendly segment labels
-- Sub-10ms prediction latency (model pre-loaded)
-- Input validation with clear error messages
+- ML-powered customer segmentation with 5 features
+- 5 business-meaningful segment labels
+- Automatic recommendation engine per segment
+- Preprocessing layer handles missing/invalid data
+- Full prediction history stored in SQLite
 
 ### Segments
 | Cluster | Label | Profile |
 |---------|-------|---------|
-| 0 | Premium Customers | High Income, High Spending |
-| 1 | Careful Spenders | High Income, Low Spending |
-| 2 | Budget Shoppers | Low Income, High Spending |
-| 3 | Low Engagement | Low Income, Low Spending |
-| 4 | Average Customers | Medium Income, Medium Spending |
+| 0 | High Value Customers | High income, high spending, frequent buyer |
+| 1 | At Risk Customers | Older, declining engagement |
+| 2 | Loyal Customers | Consistent, steady shoppers |
+| 3 | Budget Shoppers | Young, low income but enthusiastic |
+| 4 | Potential Targets | High income but low spending |
     """,
     lifespan=lifespan,
     docs_url="/docs",       # Swagger UI
@@ -96,6 +99,7 @@ app.add_middleware(
 # --- Register Routers ---------------------------------------------------------
 # All prediction and customer routes are under /api/v1
 app.include_router(predict.router, prefix="/api/v1")
+app.include_router(analytics.router, prefix="/api/v1")
 app.include_router(customers.router, prefix="/api/v1")
 
 

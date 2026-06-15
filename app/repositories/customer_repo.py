@@ -22,7 +22,9 @@ def get_customer_by_id(db: Session, customer_id: int) -> Optional[models.Custome
 
 def get_customer_by_email(db: Session, email: str) -> Optional[models.Customer]:
     """Fetch a customer by their email address."""
-    return db.query(models.Customer).filter(models.Customer.email == email.lower().strip()).first()
+    return db.query(models.Customer).filter(
+        models.Customer.email == email.lower().strip()
+    ).first()
 
 
 def list_customers(
@@ -33,24 +35,28 @@ def list_customers(
 ) -> List[models.Customer]:
     """
     List customers with optional pagination and segment filtering.
-    Crucial for Phase 6 natural language agent query capabilities.
+    Filters by the most recent prediction's segment label.
     """
     query = db.query(models.Customer)
     if segment_label:
-        # Match segment name case-insensitively (e.g. 'premium' -> 'Premium Customers')
-        query = query.join(models.Customer.predictions).filter(
-            models.Prediction.segment_label.ilike(f"%{segment_label}%")
-        ).distinct()
+        query = (
+            query.join(models.Customer.predictions)
+            .filter(models.Prediction.segment_label.ilike(f"%{segment_label}%"))
+            .distinct()
+        )
     return query.offset(skip).limit(limit).all()
 
 
 def create_customer(db: Session, customer: schemas.CustomerCreate) -> models.Customer:
     """Create a new customer profile in the database."""
     db_customer = models.Customer(
-        name=customer.name,
-        email=customer.email.lower().strip(),
-        annual_income=customer.annual_income,
-        spending_score=customer.spending_score,
+        name               = customer.name,
+        email              = customer.email.lower().strip(),
+        age                = customer.age,
+        gender             = customer.gender,
+        annual_income      = customer.annual_income,
+        spending_score     = customer.spending_score,
+        purchase_frequency = customer.purchase_frequency,
     )
     db.add(db_customer)
     db.commit()
@@ -60,21 +66,29 @@ def create_customer(db: Session, customer: schemas.CustomerCreate) -> models.Cus
 
 def create_prediction(
     db: Session,
+    age: int,
+    gender: str,
     annual_income: float,
     spending_score: float,
+    purchase_frequency: int,
     cluster_id: int,
     segment_label: str,
     segment_description: str,
+    recommendation: str,
     customer_id: Optional[int] = None,
 ) -> models.Prediction:
-    """Log a prediction history record to the database."""
+    """Log a prediction record to the database."""
     db_prediction = models.Prediction(
-        customer_id=customer_id,
-        annual_income=annual_income,
-        spending_score=spending_score,
-        cluster_id=cluster_id,
-        segment_label=segment_label,
-        segment_description=segment_description,
+        customer_id         = customer_id,
+        age                 = age,
+        gender              = gender,
+        annual_income       = annual_income,
+        spending_score      = spending_score,
+        purchase_frequency  = purchase_frequency,
+        cluster_id          = cluster_id,
+        segment_label       = segment_label,
+        segment_description = segment_description,
+        recommendation      = recommendation,
     )
     db.add(db_prediction)
     db.commit()
@@ -88,7 +102,7 @@ def list_predictions(
     skip: int = 0,
     limit: int = 100,
 ) -> List[models.Prediction]:
-    """Retrieve prediction history, optionally filtering by a specific customer."""
+    """Retrieve prediction history, optionally filtering by customer."""
     query = db.query(models.Prediction)
     if customer_id is not None:
         query = query.filter(models.Prediction.customer_id == customer_id)
